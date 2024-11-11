@@ -146,10 +146,7 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed!'
-            script {
-                def log = currentBuild.rawBuild.getLog(50).join('\n')
-                echo "Last 50 lines of build log:\n${log}"
-            }
+            echo "Please check the console output for details on the failure."
         }
     }
 }
