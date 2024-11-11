@@ -5,7 +5,7 @@ pipeline {
         EC2_HOST = 'ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com'
         JAR_NAME = 'ci-cd-0.0.1-SNAPSHOT.jar'
         // Git 인증 정보를 환경변수로 설정
-        GIT_SSH_KEY = credentials('git')
+        GIT_SSH_KEY = credentials('git')  // Git 접근을 위한 키
     }
 
     stages {
@@ -32,7 +32,7 @@ pipeline {
                         extensions: [],
                         submoduleCfg: [],
                         userRemoteConfigs: [[
-                            credentialsId: 'git',
+                            credentialsId: 'git',  // Git 인증에 사용될 SSH 키 ID
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
                         ]]
                     ])
@@ -104,7 +104,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                sshagent(credentials: ['aws_ec2_pem_key']) {
+                sshagent(credentials: ['ec2-ssh-key']) {  // EC2 접근에 사용될 PEM 키 ID
                     script {
                         try {
                             sh """
