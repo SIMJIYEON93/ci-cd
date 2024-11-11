@@ -42,7 +42,7 @@ pipeline {
                             sh """
                             scp -o StrictHostKeyChecking=no build/libs/ci-cd-0.0.1-SNAPSHOT.jar ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com:/home/ubuntu/
                             ssh ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com 'pkill -f "java -jar" || true'
-                            ssh ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com 'nohup java -jar /home/ubuntu/ci-cd-0.0.1-SNAPSHOT.jar --server.port=8080 &'
+                            ssh ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com 'nohup java -jar /home/ubuntu/ci-cd-0.0.1-SNAPSHOT.jar &'
                             """
                         } catch (Exception e) {
                             echo "Deployment failed with error: ${e.getMessage()}"
