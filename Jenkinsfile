@@ -4,12 +4,14 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
+                echo "Starting Clone Repository stage"
                 git branch: 'dev', url: 'https://github.com/SIMJIYEON93/ci-cd.git'
             }
         }
 
         stage('Build') {
             steps {
+                echo "Starting Build stage"
                 script {
                     try {
                         sh './gradlew clean build'
@@ -23,6 +25,7 @@ pipeline {
 
         stage('Test') {
             steps {
+                echo "Starting Test stage"
                 script {
                     try {
                         sh './gradlew test'
@@ -36,15 +39,13 @@ pipeline {
 
         stage('Deploy') {
             steps {
+                echo "Starting Deploy stage"
                 sshagent(['git']) {
                     script {
                         try {
                             sh """
-                            echo "Copying .jar file to server"
                             scp -o StrictHostKeyChecking=no build/libs/ci-cd-0.0.1-SNAPSHOT.jar ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com:/home/ubuntu/
-                            echo "Stopping any running application"
                             ssh ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com 'pkill -f "java -jar" || true'
-                            echo "Starting application"
                             ssh ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com 'nohup java -jar /home/ubuntu/ci-cd-0.0.1-SNAPSHOT.jar &'
                             """
                         } catch (Exception e) {
@@ -66,7 +67,6 @@ pipeline {
         }
         failure {
             echo 'Deployment failed.'
-            // 전체 빌드 오류 로그 추가
             script {
                 def log = currentBuild.rawBuild.getLog(20).join("\n")
                 echo "Last 20 lines of build log:\n${log}"
