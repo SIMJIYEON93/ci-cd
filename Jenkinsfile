@@ -104,7 +104,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                sshagent(['git']) {
+                sshagent(['ec2-ssh-key']) {
                     script {
                         try {
                             sh """
