@@ -104,7 +104,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                sshagent(['ec2-ssh-key']) {
+                sshagent(credentials: ['aws_ec2_pem_key']) {
                     script {
                         try {
                             sh """
