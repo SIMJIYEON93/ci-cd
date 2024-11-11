@@ -20,7 +20,7 @@ pipeline {
                     echo "Starting Clone Repository stage"
                     sh 'pwd && ls -la'
                     sh 'git --version'
-
+//test
                     checkout([$class: 'GitSCM',
                         branches: [[name: '*/dev']],
                         doGenerateSubmoduleConfigurations: false,
