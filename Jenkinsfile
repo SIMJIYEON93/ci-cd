@@ -40,8 +40,11 @@ pipeline {
                     script {
                         try {
                             sh """
+                            echo "Copying .jar file to server"
                             scp -o StrictHostKeyChecking=no build/libs/ci-cd-0.0.1-SNAPSHOT.jar ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com:/home/ubuntu/
+                            echo "Stopping any running application"
                             ssh ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com 'pkill -f "java -jar" || true'
+                            echo "Starting application"
                             ssh ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com 'nohup java -jar /home/ubuntu/ci-cd-0.0.1-SNAPSHOT.jar &'
                             """
                         } catch (Exception e) {
