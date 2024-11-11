@@ -4,8 +4,6 @@ pipeline {
     environment {
         EC2_HOST = 'ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com'
         JAR_NAME = 'ci-cd-0.0.1-SNAPSHOT.jar'
-        // Git 인증 정보를 환경변수로 설정, Git 접근을 위한 키
-        GIT_SSH_KEY = credentials('git')
     }
 
     stages {
@@ -21,7 +19,6 @@ pipeline {
                 script {
                     echo "Starting Clone Repository stage"
                     sh 'pwd && ls -la'
-
                     sh 'git --version'
 
                     checkout([$class: 'GitSCM',
@@ -30,7 +27,7 @@ pipeline {
                         extensions: [],
                         submoduleCfg: [],
                         userRemoteConfigs: [[
-                            credentialsId: 'git',  // Git 인증에 사용될 SSH 키 ID
+                            credentialsId: 'token',  // Git 인증에 사용될 토큰 ID
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
                         ]]
                     ])
@@ -65,9 +62,7 @@ pipeline {
                 script {
                     try {
                         sh './gradlew --version'
-
                         sh './gradlew clean build -x test --stacktrace --info'
-
                         sh 'ls -la build/libs/'
                     } catch (Exception e) {
                         echo "Build failed with error: ${e.getMessage()}"
@@ -96,7 +91,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                sshagent(credentials: ['ec2-ssh-key']) {  // EC2 접근에 사용될 PEM 키 ID
+                sshagent(credentials: ['aws_ec2']) {  // EC2 접근에 사용될 PEM 키 ID
                     script {
                         try {
                             sh """
