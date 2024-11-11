@@ -35,7 +35,7 @@ pipeline {
                     sh 'ls -la'
                 }
             }
-        }
+        }//
 
         stage('Prepare Build') {
             steps {
