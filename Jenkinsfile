@@ -12,7 +12,7 @@ pipeline {
                 echo "Cleaning workspace..."
                 cleanWs()
             }
-        }
+        }//test
 
         stage('Clone Repository') {
             steps {
