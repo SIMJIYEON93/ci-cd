@@ -12,7 +12,7 @@ pipeline {
                 echo "Cleaning workspace..."
                 cleanWs()
             }
-        }//test
+        }
 
         stage('Clone Repository') {
             steps {
@@ -27,7 +27,7 @@ pipeline {
                         extensions: [],
                         submoduleCfg: [],
                         userRemoteConfigs: [[
-                            credentialsId: 'token',  // Git 인증에 사용될 토큰 ID
+                            credentialsId: 'ssh',  // SSH 인증에 사용될 SSH 키 ID
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
                         ]]
                     ])
