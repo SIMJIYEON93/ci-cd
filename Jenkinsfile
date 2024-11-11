@@ -2,30 +2,84 @@ pipeline {
     agent any
 
     environment {
-        // EC2 정보 환경변수로 설정
         EC2_HOST = 'ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com'
         JAR_NAME = 'ci-cd-0.0.1-SNAPSHOT.jar'
+        // Git 인증 정보를 환경변수로 설정
+        GIT_SSH_KEY = credentials('git')
     }
 
     stages {
+        stage('Workspace Clean') {
+            steps {
+                echo "Cleaning workspace..."
+                cleanWs()
+            }
+        }
+
         stage('Clone Repository') {
             steps {
-                echo "Starting Clone Repository stage"
-                // git 문법 수정
-                git branch: 'dev', url: 'https://github.com/SIMJIYEON93/ci-cd.git'
+                script {
+                    echo "Starting Clone Repository stage"
+                    // 작업 디렉토리 확인
+                    sh 'pwd && ls -la'
+
+                    // Git 설정 확인
+                    sh 'git --version'
+
+                    checkout([$class: 'GitSCM',
+                        branches: [[name: '*/dev']],
+                        doGenerateSubmoduleConfigurations: false,
+                        extensions: [],
+                        submoduleCfg: [],
+                        userRemoteConfigs: [[
+                            credentialsId: 'git',
+                            url: 'git@github.com:SIMJIYEON93/ci-cd.git'
+                        ]]
+                    ])
+
+                    // Clone 후 파일 확인
+                    sh 'ls -la'
+                }
+            }
+        }
+
+        stage('Prepare Build') {
+            steps {
+                script {
+                    echo "Preparing build environment..."
+                    // Gradle 래퍼 존재 확인
+                    sh 'ls -la gradlew || echo "Gradle wrapper not found"'
+
+                    // Gradle 래퍼 권한 설정
+                    sh '''
+                        if [ -f gradlew ]; then
+                            chmod +x gradlew
+                            echo "Gradle wrapper permissions set"
+                        else
+                            echo "Error: gradlew file not found"
+                            exit 1
+                        fi
+                    '''
+                }
             }
         }
 
         stage('Build') {
             steps {
                 echo "Starting Build stage"
-                // gradlew 실행 권한 추가
-                sh 'chmod +x ./gradlew'
                 script {
                     try {
-                        sh './gradlew clean build -x test'
+                        // Gradle 버전 및 환경 확인
+                        sh './gradlew --version'
+
+                        // 빌드 실행
+                        sh './gradlew clean build -x test --stacktrace --info'
+
+                        // 빌드 결과물 확인
+                        sh 'ls -la build/libs/'
                     } catch (Exception e) {
                         echo "Build failed with error: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
                         error "Stopping pipeline due to build error"
                     }
                 }
@@ -37,9 +91,10 @@ pipeline {
                 echo "Starting Test stage"
                 script {
                     try {
-                        sh './gradlew test'
+                        sh './gradlew test --stacktrace --info'
                     } catch (Exception e) {
                         echo "Test failed with error: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
                         error "Stopping pipeline due to test error"
                     }
                 }
@@ -52,26 +107,40 @@ pipeline {
                 sshagent(['git']) {
                     script {
                         try {
-                            // 배포 스크립트 개선
                             sh """
+                                # 배포 전 EC2 연결 테스트
+                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} 'echo "SSH Connection successful"'
+
+                                # JAR 파일 존재 확인
+                                ls -l build/libs/${JAR_NAME}
+
                                 # JAR 파일 전송
                                 scp -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ${EC2_HOST}:/home/ubuntu/
 
-                                # 실행 중인 애플리케이션 종료
-                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} 'pkill -f "${JAR_NAME}" || true'
+                                # 배포 스크립트 실행
+                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} '''
+                                    # Java 버전 확인
+                                    java -version
 
-                                # 새 버전 실행
-                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} '
+                                    # 기존 프로세스 종료
+                                    pkill -f "${JAR_NAME}" || true
+
+                                    # 새 버전 실행
                                     nohup java -jar /home/ubuntu/${JAR_NAME} > application.log 2>&1 &
-                                    sleep 5
-                                    if ! pgrep -f "${JAR_NAME}" > /dev/null; then
-                                        echo "Application failed to start"
+
+                                    # 프로세스 실행 확인
+                                    sleep 10
+                                    if pgrep -f "${JAR_NAME}"; then
+                                        echo "Application started successfully"
+                                    else
+                                        echo "Failed to start application"
                                         exit 1
                                     fi
-                                '
+                                '''
                             """
                         } catch (Exception e) {
                             echo "Deployment failed with error: ${e.getMessage()}"
+                            currentBuild.result = 'FAILURE'
                             error "Stopping pipeline due to deployment error"
                         }
                     }
@@ -82,16 +151,19 @@ pipeline {
 
     post {
         always {
-            echo 'Build and deployment completed.'
+            echo 'Pipeline execution completed'
+            // 작업 디렉토리 내용 출력
+            sh 'pwd && ls -la'
         }
         success {
-            echo 'Deployment succeeded!'
+            echo 'Pipeline succeeded!'
         }
         failure {
-            echo 'Deployment failed.'
+            echo 'Pipeline failed!'
             script {
-                def log = currentBuild.rawBuild.getLog(20).join('\n')
-                echo "Last 20 lines of build log:\n${log}"
+                // 상세한 에러 로그 출력
+                def log = currentBuild.rawBuild.getLog(50).join('\n')
+                echo "Last 50 lines of build log:\n${log}"
             }
         }
     }
