@@ -4,8 +4,8 @@ pipeline {
     environment {
         EC2_HOST = 'ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com'
         JAR_NAME = 'ci-cd-0.0.1-SNAPSHOT.jar'
-        // Git 인증 정보를 환경변수로 설정
-        GIT_SSH_KEY = credentials('git')  // Git 접근을 위한 키
+        // Git 인증 정보를 환경변수로 설정, Git 접근을 위한 키
+        GIT_SSH_KEY = credentials('git')
     }
 
     stages {
@@ -20,10 +20,8 @@ pipeline {
             steps {
                 script {
                     echo "Starting Clone Repository stage"
-                    // 작업 디렉토리 확인
                     sh 'pwd && ls -la'
 
-                    // Git 설정 확인
                     sh 'git --version'
 
                     checkout([$class: 'GitSCM',
@@ -37,7 +35,6 @@ pipeline {
                         ]]
                     ])
 
-                    // Clone 후 파일 확인
                     sh 'ls -la'
                 }
             }
@@ -47,10 +44,8 @@ pipeline {
             steps {
                 script {
                     echo "Preparing build environment..."
-                    // Gradle 래퍼 존재 확인
                     sh 'ls -la gradlew || echo "Gradle wrapper not found"'
 
-                    // Gradle 래퍼 권한 설정
                     sh '''
                         if [ -f gradlew ]; then
                             chmod +x gradlew
@@ -69,13 +64,10 @@ pipeline {
                 echo "Starting Build stage"
                 script {
                     try {
-                        // Gradle 버전 및 환경 확인
                         sh './gradlew --version'
 
-                        // 빌드 실행
                         sh './gradlew clean build -x test --stacktrace --info'
 
-                        // 빌드 결과물 확인
                         sh 'ls -la build/libs/'
                     } catch (Exception e) {
                         echo "Build failed with error: ${e.getMessage()}"
@@ -152,7 +144,6 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed'
-            // 작업 디렉토리 내용 출력
             sh 'pwd && ls -la'
         }
         success {
@@ -161,7 +152,6 @@ pipeline {
         failure {
             echo 'Pipeline failed!'
             script {
-                // 상세한 에러 로그 출력
                 def log = currentBuild.rawBuild.getLog(50).join('\n')
                 echo "Last 50 lines of build log:\n${log}"
             }
