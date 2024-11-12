@@ -91,32 +91,19 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'ec', variable: 'AWS_PEM_FILE')]) {
+                withCredentials([file(credentialsId: 'aws', variable: 'AWS_PEM_FILE')]) {  // 'aws'는 파일형 크리덴셜 ID
                     script {
                         try {
-                            // 1. AWS_PEM_FILE 경로 출력
-                            echo "AWS_PEM_FILE is set to: ${AWS_PEM_FILE}"
+                            // EC2 연결 테스트
+                            sh "ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'"
 
-                            // 2. PEM 파일 경로 확인 및 권한 설정
-                            sh """
-                                chmod 600 ${AWS_PEM_FILE}
-                                ls -l ${AWS_PEM_FILE}
-                            """
-
-                            // 3. EC2 연결 테스트
-                            sh """
-                                ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
-                            """
-
-                            // 4. JAR 파일 존재 확인
+                            // JAR 파일 존재 확인
                             sh "ls -l build/libs/${JAR_NAME}"
 
-                            // 5. JAR 파일 전송
-                            sh """
-                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/
-                            """
+                            // JAR 파일 전송
+                            sh "scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/"
 
-                            // 6. 배포 스크립트 실행
+                            // 배포 스크립트 실행
                             sh """
                                 ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
                                     # Java 버전 확인
