@@ -91,7 +91,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'aws', variable: 'AWS_PEM_FILE')]) {
+                withCredentials([file(credentialsId: 'ec', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
                             // EC2 연결 테스트
