@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        EC2_HOST = 'ubuntu@ec2-3-38-214-141.ap-northeast-2.compute.amazonaws.com'
+        EC2_HOST = 'ubuntu@ec2-13-124-215-135.ap-northeast-2.compute.amazonaws.com'
         JAR_NAME = 'ci-cd-0.0.1-SNAPSHOT.jar'
     }
 
