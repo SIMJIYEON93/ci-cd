@@ -23,16 +23,11 @@ pipeline {
 
                     checkout([$class: 'GitSCM',
                         branches: [[name: '*/dev']],
-                        doGenerateSubmoduleConfigurations: false,
-                        extensions: [],
-                        submoduleCfg: [],
                         userRemoteConfigs: [[
-                            credentialsId: 'ssh',  // SSH 인증에 사용될 SSH 키 ID
+                            credentialsId: 'ssh',
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
-                        ]]
+                        ]])
                     ])
-
-                    sh 'ls -la'
                 }
             }
         }
@@ -41,49 +36,8 @@ pipeline {
             steps {
                 script {
                     echo "Preparing build environment..."
-                    sh 'ls -la gradlew || echo "Gradle wrapper not found"'
-
-                    sh '''
-                        if [ -f gradlew ]; then
-                            chmod +x gradlew
-                            echo "Gradle wrapper permissions set"
-                        else
-                            echo "Error: gradlew file not found"
-                            exit 1
-                        fi
-                    '''
-                }
-            }
-        }
-
-        stage('Build') {
-            steps {
-                echo "Starting Build stage"
-                script {
-                    try {
-                        sh './gradlew --version'
-                        sh './gradlew clean build -x test --stacktrace --info'
-                        sh 'ls -la build/libs/'
-                    } catch (Exception e) {
-                        echo "Build failed with error: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error "Stopping pipeline due to build error"
-                    }
-                }
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo "Starting Test stage"
-                script {
-                    try {
-                        sh './gradlew test --stacktrace --info'
-                    } catch (Exception e) {
-                        echo "Test failed with error: ${e.getMessage()}"
-                        currentBuild.result = 'FAILURE'
-                        error "Stopping pipeline due to test error"
-                    }
+                    sh 'chmod +x gradlew'
+                    sh './gradlew clean build -x test --stacktrace --info'
                 }
             }
         }
@@ -91,7 +45,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'aws', variable: 'AWS_PEM_FILE')]) {  // 'aws'는 파일형 크리덴셜 ID
+                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {  // 'aws'는 파일형 크리덴셜 ID
                     script {
                         try {
                             // EC2 연결 테스트
@@ -139,14 +93,12 @@ pipeline {
     post {
         always {
             echo 'Pipeline execution completed'
-            sh 'pwd && ls -la'
         }
         success {
             echo 'Pipeline succeeded!'
         }
         failure {
             echo 'Pipeline failed!'
-            echo "Please check the console output for details on the failure."
         }
     }
 }
