@@ -87,7 +87,7 @@ pipeline {
                 }
             }
         }
-//
+
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
@@ -96,16 +96,16 @@ pipeline {
                         try {
                             sh """
                                 # 배포 전 EC2 연결 테스트
-                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} 'echo "SSH Connection successful"'
+                                ssh -i /home/jenkins/.ssh/aws_ec2.pem -o StrictHostKeyChecking=no ${EC2_HOST} 'echo "SSH Connection successful"'
 
                                 # JAR 파일 존재 확인
                                 ls -l build/libs/${JAR_NAME}
 
                                 # JAR 파일 전송
-                                scp -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ${EC2_HOST}:/home/ubuntu/
+                                scp -i /home/jenkins/.ssh/aws_ec2.pem -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ${EC2_HOST}:/home/ubuntu/
 
                                 # 배포 스크립트 실행
-                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} '''
+                                ssh -i /home/jenkins/.ssh/aws_ec2.pem -o StrictHostKeyChecking=no ${EC2_HOST} '''
                                     # Java 버전 확인
                                     java -version
 
@@ -133,7 +133,7 @@ pipeline {
                     }
                 }
             }
-        }//
+        }
     }
 
     post {
