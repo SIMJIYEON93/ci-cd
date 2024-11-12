@@ -26,8 +26,8 @@ pipeline {
                         userRemoteConfigs: [[
                             credentialsId: 'ssh',
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
-                        ]]
-                    ]) // 여기에서 괄호를 제대로 닫아야 합니다.
+                        ]])
+                    ])
                 }
             }
         }
@@ -45,19 +45,23 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {  // 'ec2'는 파일형 크리덴셜 ID
+                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
                             // EC2 연결 테스트
+                            echo "Testing SSH connection to EC2..."
                             sh "ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'"
 
                             // JAR 파일 존재 확인
+                            echo "Checking if JAR file exists..."
                             sh "ls -l build/libs/${JAR_NAME}"
 
                             // JAR 파일 전송
+                            echo "Transferring JAR file to EC2..."
                             sh "scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/"
 
                             // 배포 스크립트 실행
+                            echo "Running deployment script on EC2..."
                             sh """
                                 ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
                                     # Java 버전 확인
