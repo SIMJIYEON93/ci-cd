@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        EC2_HOST = 'ubuntu@ec2-13-124-215-135.ap-northeast-2.compute.amazonaws.com'
+        EC2_HOST = 'ec2-13-124-215-135.ap-northeast-2.compute.amazonaws.com'
         JAR_NAME = 'ci-cd-0.0.1-SNAPSHOT.jar'
     }
 
@@ -27,7 +27,7 @@ pipeline {
                         extensions: [],
                         submoduleCfg: [],
                         userRemoteConfigs: [[
-                            credentialsId: 'ssh',  // SSH 인증에 사용될 SSH 키 ID
+                            credentialsId: 'ssh',
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
                         ]]
                     ])
@@ -91,21 +91,21 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                sshagent(credentials: ['aws']) {  // EC2 접근에 사용될 PEM 키 ID
+                withCredentials([sshUserPrivateKey(credentialsId: 'aws', keyFileVariable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
                             // EC2 연결 테스트
-                            sh 'ssh -o StrictHostKeyChecking=no ${EC2_HOST} "echo SSH Connection successful"'
+                            sh "ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'"
 
                             // JAR 파일 존재 확인
                             sh "ls -l build/libs/${JAR_NAME}"
 
                             // JAR 파일 전송
-                            sh 'scp -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ${EC2_HOST}:/home/ubuntu/'
+                            sh "scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/"
 
                             // 배포 스크립트 실행
                             sh """
-                                ssh -o StrictHostKeyChecking=no ${EC2_HOST} '''
+                                ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
                                     # Java 버전 확인
                                     java -version
 
