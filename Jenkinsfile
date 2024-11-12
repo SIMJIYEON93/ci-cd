@@ -91,7 +91,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                sshagent(credentials: ['aws_ec2']) {  // EC2 접근에 사용될 PEM 키 ID
+                sshagent(credentials: ['aws']) {  // EC2 접근에 사용될 PEM 키 ID
                     script {
                         try {
                             // EC2 연결 테스트
