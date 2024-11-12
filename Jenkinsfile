@@ -26,7 +26,7 @@ pipeline {
                         userRemoteConfigs: [[
                             credentialsId: 'ssh',
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
-                        ]]
+                        ]])
                     ])
                 }
             }
@@ -45,7 +45,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) { // 'ec2'는 파일형 크리덴셜 ID
+                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
                             // EC2 연결 테스트
@@ -73,6 +73,9 @@ pipeline {
 
                                     # 기존 프로세스 종료
                                     pkill -f "${JAR_NAME}" || true
+
+                                    # JAR 파일 권한 수정 (실행 권한 추가)
+                                    chmod +x /home/ubuntu/${JAR_NAME}
 
                                     # 새 버전 실행
                                     nohup java -jar /home/ubuntu/${JAR_NAME} > /home/ubuntu/application.log 2>&1 &
@@ -107,7 +110,6 @@ pipeline {
         }
         failure {
             echo 'Pipeline failed!'
-            echo "Please check the console output for details on the failure."
         }
     }
 }
