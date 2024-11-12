@@ -24,10 +24,10 @@ pipeline {
                     checkout([$class: 'GitSCM',
                         branches: [[name: '*/dev']],
                         userRemoteConfigs: [[
-                            credentialsId: 'ssh',
+                            credentialsId: 'ssh',  // SSH 인증에 사용될 SSH 키 ID
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
                         ]]
-                    ]) // Fixed here: removed the extra ]]]
+                    ])
                 }
             }
         }
@@ -48,10 +48,22 @@ pipeline {
                 withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
-                            // EC2 연결 테스트 (verbose로 SSH 디버깅 추가)
+                            // PEM 파일을 EC2 서버의 /home/ubuntu/.ssh에 전송
+                            echo "Transferring PEM file to EC2..."
+                            sh """
+                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ${AWS_PEM_FILE} ubuntu@${EC2_HOST}:/home/ubuntu/.ssh/jenkins_aws.pem
+                            """
+
+                            // PEM 파일 권한을 600으로 설정
+                            echo "Setting file permissions for PEM file..."
+                            sh """
+                                ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'chmod 600 /home/ubuntu/.ssh/jenkins_aws.pem'
+                            """
+
+                            // EC2 연결 테스트
                             echo "Testing SSH connection to EC2..."
                             sh """
-                                ssh -v -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
+                                ssh -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
                             """
 
                             // JAR 파일 존재 확인
@@ -61,21 +73,21 @@ pipeline {
                             // JAR 파일 전송
                             echo "Transferring JAR file to EC2..."
                             sh """
-                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/
+                                scp -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/
                             """
 
                             // 배포 스크립트 실행 (로그를 자세히 확인)
                             echo "Running deployment script on EC2..."
                             sh """
-                                ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
+                                ssh -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
                                     # Java 버전 확인
                                     java -version
 
-                                    # 기존 프로세스 종료 (sudo로 실행)
-                                    sudo pkill -f "${JAR_NAME}" || true
+                                    # 기존 프로세스 종료
+                                    pkill -f "${JAR_NAME}" || true
 
                                     # JAR 파일 권한 수정 (실행 권한 추가)
-                                    sudo chmod +x /home/ubuntu/${JAR_NAME}
+                                    chmod +x /home/ubuntu/${JAR_NAME}
 
                                     # 새 버전 실행
                                     nohup java -jar /home/ubuntu/${JAR_NAME} > /home/ubuntu/application.log 2>&1 &
@@ -99,7 +111,7 @@ pipeline {
                 }
             }
         }
-    }
+    }//
 
     post {
         always {
