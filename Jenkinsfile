@@ -113,10 +113,10 @@ pipeline {
                                     pkill -f "${JAR_NAME}" || true
 
                                     # 새 버전 실행
-                                    nohup java -jar /home/ubuntu/${JAR_NAME} > application.log 2>&1 &
+                                    nohup java -jar /home/ubuntu/${JAR_NAME} > /home/ubuntu/application.log 2>&1 &
 
                                     # 프로세스 실행 확인
-                                    sleep 10
+                                    sleep 20
                                     if pgrep -f "${JAR_NAME}"; then
                                         echo "Application started successfully"
                                     else
