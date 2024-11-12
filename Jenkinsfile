@@ -48,7 +48,7 @@ pipeline {
                 withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
-                            // EC2 연결 테스트
+                            // EC2 연결 테스트//
                             echo "Testing SSH connection to EC2..."
                             sh "ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'"
 
