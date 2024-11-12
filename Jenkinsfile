@@ -26,7 +26,7 @@ pipeline {
                         userRemoteConfigs: [[
                             credentialsId: 'ssh',
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
-                        ]])
+                        ]]
                     ])
                 }
             }
