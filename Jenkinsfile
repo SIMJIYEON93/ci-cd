@@ -26,8 +26,8 @@ pipeline {
                         userRemoteConfigs: [[
                             credentialsId: 'ssh',
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
-                        ]])
-                    ])
+                        ]]
+                    ]) // 여기에서 괄호를 제대로 닫아야 합니다.
                 }
             }
         }
@@ -41,11 +41,11 @@ pipeline {
                 }
             }
         }
-//
+
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {  // 'aws'는 파일형 크리덴셜 ID
+                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {  // 'ec2'는 파일형 크리덴셜 ID
                     script {
                         try {
                             // EC2 연결 테스트
