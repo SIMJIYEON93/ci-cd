@@ -27,7 +27,7 @@ pipeline {
                         extensions: [],
                         submoduleCfg: [],
                         userRemoteConfigs: [[
-                            credentialsId: 'ssh',
+                            credentialsId: 'ssh',  // SSH 인증에 사용될 SSH 키 ID
                             url: 'git@github.com:SIMJIYEON93/ci-cd.git'
                         ]]
                     ])
@@ -91,17 +91,21 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([sshUserPrivateKey(credentialsId: 'aws', keyFileVariable: 'AWS_PEM_FILE')]) {
+                withCredentials([file(credentialsId: 'aws', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
                             // EC2 연결 테스트
-                            sh "ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'"
+                            sh """
+                                ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
+                            """
 
                             // JAR 파일 존재 확인
                             sh "ls -l build/libs/${JAR_NAME}"
 
                             // JAR 파일 전송
-                            sh "scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/"
+                            sh """
+                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/
+                            """
 
                             // 배포 스크립트 실행
                             sh """
