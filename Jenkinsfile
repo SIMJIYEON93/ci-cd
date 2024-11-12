@@ -48,10 +48,10 @@ pipeline {
                 withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
-                            // EC2 연결 테스트
+                            // EC2 연결 테스트 (verbose로 SSH 디버깅 추가)
                             echo "Testing SSH connection to EC2..."
                             sh """
-                                ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
+                                ssh -v -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
                             """
 
                             // JAR 파일 존재 확인
@@ -71,11 +71,11 @@ pipeline {
                                     # Java 버전 확인
                                     java -version
 
-                                    # 기존 프로세스 종료
-                                    pkill -f "${JAR_NAME}" || true
+                                    # 기존 프로세스 종료 (sudo로 실행)
+                                    sudo pkill -f "${JAR_NAME}" || true
 
                                     # JAR 파일 권한 수정 (실행 권한 추가)
-                                    chmod +x /home/ubuntu/${JAR_NAME}
+                                    sudo chmod +x /home/ubuntu/${JAR_NAME}
 
                                     # 새 버전 실행
                                     nohup java -jar /home/ubuntu/${JAR_NAME} > /home/ubuntu/application.log 2>&1 &
@@ -99,7 +99,7 @@ pipeline {
                 }
             }
         }
-    }//
+    }
 
     post {
         always {
