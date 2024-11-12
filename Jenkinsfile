@@ -98,7 +98,7 @@ pipeline {
                             sh 'ssh -o StrictHostKeyChecking=no ${EC2_HOST} "echo SSH Connection successful"'
 
                             // JAR 파일 존재 확인
-                            ls -l build/libs/${JAR_NAME}
+                            sh "ls -l build/libs/${JAR_NAME}"
 
                             // JAR 파일 전송
                             sh 'scp -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ${EC2_HOST}:/home/ubuntu/'
