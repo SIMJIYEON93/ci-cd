@@ -42,68 +42,56 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            steps {
-                echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'cd', variable: 'AWS_PEM_FILE')]) {
-                    script {
-                        try {
-                            echo "Transferring PEM file to EC2..."
-                            sh """
-                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ${AWS_PEM_FILE} ubuntu@${EC2_HOST}:/home/ubuntu/.ssh/jenkins_aws.pem
-                            """
+    stage('Deploy') {
+        steps {
+            echo "Starting Deploy stage"
+            withCredentials([file(credentialsId: 'aws', variable: 'AWS_PEM_FILE')]) {
+                script {
+                    try {
+                        echo "Testing SSH connection to EC2..."
+                        sh """
+                            ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
+                        """
 
-                            echo "Setting file permissions for PEM file..."
-                            sh """
-                                ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'chmod 600 /home/ubuntu/.ssh/jenkins_aws.pem'
-                            """
+                        echo "Transferring JAR file to EC2..."
+                        sh """
+                            scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/app/
+                        """
 
-                            echo "Testing SSH connection to EC2..."
-                            sh """
-                                ssh -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
-                            """
+                        echo "Running deployment script on EC2..."
+                        sh """
+                            ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
+                                # Java 버전 확인
+                                java -version
 
-                            echo "Checking if JAR file exists..."
-                            sh "ls -l build/libs/${JAR_NAME}"
+                                # 기존 프로세스 종료
+                                pkill -f "${JAR_NAME}" || true
 
-                            echo "Transferring JAR file to EC2..."
-                            sh """
-                                scp -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/app
-                            """
+                                # JAR 파일 권한 수정 (실행 권한 추가)
+                                chmod +x /home/ubuntu/app/${JAR_NAME}
 
-                            echo "Running deployment script on EC2..."
-                            sh """
-                                ssh -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
-                                    # Java 버전 확인
-                                    java -version
+                                # 새 버전 실행
+                                nohup java -jar /home/ubuntu/app/${JAR_NAME} > /home/ubuntu/application.log 2>&1 &
 
-                                    # 기존 프로세스 종료
-                                    pkill -f "${JAR_NAME}" || true
-
-                                    # JAR 파일 권한 수정 (실행 권한 추가)
-                                    chmod +x /home/ubuntu/${JAR_NAME}
-
-                                    # 새 버전 실행
-                                    nohup java -jar /home/ubuntu/${JAR_NAME} > /home/ubuntu/application.log 2>&1 &
-
-                                    # 프로세스 실행 확인
-                                    sleep 20
-                                    if pgrep -f "${JAR_NAME}"; then
-                                        echo "Application started successfully"
-                                    else
-                                        echo "Failed to start application"
-                                        exit 1
-                                    fi
-                                '''
-                            """
-                        } catch (Exception e) {
-                            echo "Deployment failed with error: ${e.getMessage()}"
-                            currentBuild.result = 'FAILURE'
-                            error "Stopping pipeline due to deployment error"
-                        }
+                                # 프로세스 실행 확인
+                                sleep 20
+                                if pgrep -f "${JAR_NAME}"; then
+                                    echo "Application started successfully"
+                                else
+                                    echo "Failed to start application"
+                                    exit 1
+                                fi
+                            '''
+                        """
+                    } catch (Exception e) {
+                        echo "Deployment failed with error: ${e.getMessage()}"
+                        currentBuild.result = 'FAILURE'
+                        error "Stopping pipeline due to deployment error"
                     }
                 }
             }
+        }
+    }
         }
     }//
 
