@@ -64,7 +64,7 @@ pipeline {
                                     java -version
                                     pkill -f "${JAR_NAME}" || true
                                     chmod +x /home/ubuntu/app/${JAR_NAME}
-                                    nohup java -jar /home/ubuntu/app/${JAR_NAME} > /home/ubuntu/application.log 2>&1 &
+                                    nohup java -jar /home/ubuntu/app/${JAR_NAME} > /home/ubuntu/app/application.log 2>&1 &
                                     sleep 20
                                     if pgrep -f "${JAR_NAME}"; then
                                         echo "Application started successfully"
