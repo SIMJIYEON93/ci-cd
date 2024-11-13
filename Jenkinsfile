@@ -42,6 +42,15 @@ pipeline {
             }
         }
 
+        stage('Check JAR File') {
+            steps {
+                script {
+                    echo "Checking JAR file location..."
+                    sh 'find . -name "ci-cd-0.0.1-SNAPSHOT.jar"'
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
