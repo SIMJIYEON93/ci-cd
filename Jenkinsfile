@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        EC2_HOST = 'ec2-13-124-215-135.ap-northeast-2.compute.amazonaws.com'
+        EC2_HOST = 'ec2-3-38-193-202.ap-northeast-2.compute.amazonaws.com'
         JAR_NAME = 'ci-cd-0.0.1-SNAPSHOT.jar'
     }
 
@@ -45,7 +45,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {
+                withCredentials([file(credentialsId: 'cd', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
                             echo "Transferring PEM file to EC2..."
@@ -68,7 +68,7 @@ pipeline {
 
                             echo "Transferring JAR file to EC2..."
                             sh """
-                                scp -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/
+                                scp -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/app
                             """
 
                             echo "Running deployment script on EC2..."
