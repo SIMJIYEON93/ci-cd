@@ -45,7 +45,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 echo "Starting Deploy stage"
-                withCredentials([file(credentialsId: 'aws_pem_file', variable: 'AWS_PEM_FILE')]) {
+                withCredentials([file(credentialsId: 'cd', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
                             echo "Testing SSH connection to EC2..."
