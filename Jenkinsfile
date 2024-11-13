@@ -48,35 +48,29 @@ pipeline {
                 withCredentials([file(credentialsId: 'ec2', variable: 'AWS_PEM_FILE')]) {
                     script {
                         try {
-                            // PEM 파일을 EC2 서버의 /home/ubuntu/.ssh에 전송
                             echo "Transferring PEM file to EC2..."
                             sh """
                                 scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ${AWS_PEM_FILE} ubuntu@${EC2_HOST}:/home/ubuntu/.ssh/jenkins_aws.pem
                             """
 
-                            // PEM 파일 권한을 600으로 설정
                             echo "Setting file permissions for PEM file..."
                             sh """
                                 ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'chmod 600 /home/ubuntu/.ssh/jenkins_aws.pem'
                             """
 
-                            // EC2 연결 테스트
                             echo "Testing SSH connection to EC2..."
                             sh """
                                 ssh -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} 'echo SSH Connection successful'
                             """
 
-                            // JAR 파일 존재 확인
                             echo "Checking if JAR file exists..."
                             sh "ls -l build/libs/${JAR_NAME}"
 
-                            // JAR 파일 전송
                             echo "Transferring JAR file to EC2..."
                             sh """
                                 scp -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/
                             """
 
-                            // 배포 스크립트 실행 (로그를 자세히 확인)
                             echo "Running deployment script on EC2..."
                             sh """
                                 ssh -i /home/ubuntu/.ssh/jenkins_aws.pem -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '''
