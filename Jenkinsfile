@@ -64,7 +64,7 @@ pipeline {
 
                             echo "Transferring JAR file to EC2..."
                             sh(script: """
-                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/app/
+                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ./build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/app/
                             """)
 
                             echo "Running deployment script on EC2..."
