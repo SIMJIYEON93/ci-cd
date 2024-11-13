@@ -73,7 +73,7 @@ pipeline {
                                         exit 1
                                     fi
                                 '
-                            """)
+                            """)//
                         } catch (Exception e) {
                             echo "Deployment failed with error: ${e.getMessage()}"
                             currentBuild.result = 'FAILURE'
