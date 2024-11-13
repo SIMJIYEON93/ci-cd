@@ -64,17 +64,23 @@ pipeline {
 
                             echo "Transferring JAR file to EC2..."
                             sh(script: """
-                                scp -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no build/libs/${JAR_NAME} ubuntu@${EC2_HOST}:/home/ubuntu/app/
-                            """)
-
-                            echo "Running deployment script on EC2..."
-                            sh(script: """
                                 ssh -i ${AWS_PEM_FILE} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} '
+                                    echo "Checking Java version..."
                                     java -version
+
+                                    echo "Stopping any existing application..."
                                     pkill -f "${JAR_NAME}" || true
+
+                                    echo "Setting execute permission for JAR..."
                                     chmod +x /home/ubuntu/app/${JAR_NAME}
+
+                                    echo "Starting application..."
                                     nohup java -jar /home/ubuntu/app/${JAR_NAME} > /home/ubuntu/app/application.log 2>&1 &
+
+                                    echo "Waiting for application to start..."
                                     sleep 20
+
+                                    echo "Checking if application started successfully..."
                                     if pgrep -f "${JAR_NAME}"; then
                                         echo "Application started successfully"
                                     else
